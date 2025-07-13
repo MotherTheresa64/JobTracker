@@ -1,4 +1,3 @@
-// src/components/DroppableColumn.tsx
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -15,6 +14,7 @@ interface Props {
   isHovered: boolean;
   activeId?: string | null;
   tempJobState?: { id: string; newStatus: string; newIndex: number } | null;
+  version?: number; // 🔄 added to track order/status updates
 }
 
 const statusStyles: Record<string, { gradient: string; icon: string }> = {
@@ -31,6 +31,7 @@ const DroppableColumn = ({
   isHovered,
   activeId,
   tempJobState,
+  version, // ✅ force re-compute sortedJobs when order/status changes
 }: Props) => {
   const { openModal } = useJobModal();
 
@@ -44,7 +45,8 @@ const DroppableColumn = ({
 
   const sortedJobs = useMemo(
     () => [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    [jobs]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [jobs, version] // ✅ ensure reactivity
   );
 
   const isDropTarget =

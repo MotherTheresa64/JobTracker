@@ -15,9 +15,9 @@ import { useAuthContext } from "./useAuthContext";
 
 export const JobProvider = ({ children }: { children: React.ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [version, setVersion] = useState<number>(0); // ✅ new reactive version
   const { user } = useAuthContext();
 
-  // 🔄 Fetch jobs that belong to the current user
   const fetchJobs = useCallback(async () => {
     if (!user) return;
 
@@ -31,9 +31,9 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     }));
 
     setJobs(userJobs);
+    setVersion(Date.now()); // ✅ re-render trigger
   }, [user]);
 
-  // ➕ Add a new job with an order at the bottom of its column
   const addJob = async (job: Omit<Job, "id" | "userId">) => {
     if (!user) return;
     const columnJobs = jobs.filter((j) => j.status === job.status);
@@ -48,7 +48,6 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     await fetchJobs();
   };
 
-  // 🔁 Move job to a different column and assign order
   const moveJob = async (jobId: string, newStatus: JobStatus) => {
     const jobToMove = jobs.find((job) => job.id === jobId);
     if (!jobToMove || jobToMove.status === newStatus) return;
@@ -56,7 +55,6 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     const newColumnJobs = jobs.filter((j) => j.status === newStatus);
     const newOrder = newColumnJobs.length;
 
-    // 1️⃣ Optimistic update
     setJobs((prevJobs) =>
       prevJobs.map((job) =>
         job.id === jobId
@@ -64,20 +62,19 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
           : job
       )
     );
+    setVersion(Date.now()); // ✅ force column update
 
-    // 2️⃣ Persist changes to Firestore
     try {
       await updateDoc(doc(db, "jobs", jobId), {
         status: newStatus,
         order: newOrder,
       });
     } catch (err) {
-      console.error("🔥 Failed to update job status in Firestore:", err);
-      await fetchJobs(); // fallback
+      console.error("🔥 Failed to update job:", err);
+      await fetchJobs();
     }
   };
 
-  // ⬆️⬇️ Reorder jobs within the same column and persist order
   const reorderJob = async (jobId: string, newOrder: number) => {
     const jobToMove = jobs.find((job) => job.id === jobId);
     if (!jobToMove) return;
@@ -99,31 +96,28 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
         : job;
     });
 
-    setJobs(updatedJobs); // ⚡ Optimistic UI update
+    setJobs(updatedJobs);
+    setVersion(Date.now()); // ✅ re-render after reorder
 
-    // 💾 Save new order to Firestore
     for (let i = 0; i < reordered.length; i++) {
       try {
         await updateDoc(doc(db, "jobs", reordered[i].id), { order: i });
       } catch (err) {
-        console.error("🔥 Failed to reorder job:", err);
+        console.error("🔥 Failed to persist reorder:", err);
       }
     }
   };
 
-  // ❌ Delete job and refresh list
   const deleteJob = async (id: string) => {
     await deleteDoc(doc(db, "jobs", id));
     await fetchJobs();
   };
 
-  // 📝 Edit job details and refresh list
   const editJob = async (id: string, updated: Partial<Job>) => {
     await updateDoc(doc(db, "jobs", id), updated);
     await fetchJobs();
   };
 
-  // 🧠 Load jobs when user changes
   useEffect(() => {
     if (user) fetchJobs();
   }, [user, fetchJobs]);
@@ -132,6 +126,7 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     <JobContext.Provider
       value={{
         jobs,
+        version,
         addJob,
         moveJob,
         reorderJob,

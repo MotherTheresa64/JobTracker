@@ -10,11 +10,12 @@ export interface Job {
   userId: string;
   notes?: string;
   link?: string;
-  order?: number; // Used for ordering within a column
+  order?: number;
 }
 
 export interface JobContextType {
   jobs: Job[];
+  version: number; // ✅ Triggers reactivity when jobs change
   addJob: (job: Omit<Job, "id" | "userId">) => Promise<void>;
   moveJob: (jobId: string, status: JobStatus) => Promise<void>;
   reorderJob: (jobId: string, newOrder: number) => Promise<void>;
