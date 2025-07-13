@@ -6,7 +6,7 @@ import {
   DragOverlay,
   closestCenter,
 } from "@dnd-kit/core";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useJobContext } from "../context/useJobContext";
 import type { Job, JobStatus } from "../context/JobContext";
 import JobCard from "./JobCard";
@@ -31,7 +31,6 @@ const DragDropContext = ({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
   const [tempJobState, setTempJobState] = useState<TempJobMove | null>(null);
-  const [queuedReorder, setQueuedReorder] = useState<TempJobMove | null>(null);
 
   const activeJob = jobs.find((job) => job.id === activeId);
 
@@ -84,30 +83,14 @@ const DragDropContext = ({
     const statusChanged = job.status !== newStatus;
 
     if (statusChanged) {
-      await moveJob(jobId, newStatus); // Moves job to new column
-      setQueuedReorder({ id: jobId, newStatus, newIndex }); // Queue reorder
+      await moveJob(jobId, newStatus);           // ✅ update status + order
+      await reorderJob(jobId, newIndex);         // ✅ immediately reorder
     } else {
-      await reorderJob(jobId, newIndex); // Just reorder in same column
-      resetDrag();
+      await reorderJob(jobId, newIndex);         // same-column reorder
     }
+
+    resetDrag();
   };
-
-  // 🔁 Reorder only after Firestore reflects the new column status
-  useEffect(() => {
-    if (!queuedReorder) return;
-
-    const { id, newStatus, newIndex } = queuedReorder;
-    const jobInNewColumn = jobs.find(
-      (job) => job.id === id && job.status === newStatus
-    );
-
-    if (jobInNewColumn) {
-      reorderJob(id, newIndex).then(() => {
-        resetDrag();
-        setQueuedReorder(null);
-      });
-    }
-  }, [jobs, queuedReorder, reorderJob]);
 
   const resetDrag = () => {
     setActiveId(null);
