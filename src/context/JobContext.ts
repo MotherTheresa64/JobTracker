@@ -17,8 +17,7 @@ export interface JobContextType {
   jobs: Job[];
   addJob: (job: Omit<Job, "id" | "userId">) => Promise<void>;
   moveJob: (jobId: string, status: JobStatus) => Promise<void>;
-  reorderJob: (jobId: string, newOrder: number) => Promise<void>; // 🆕 Reorder within column
-  fetchJobs: () => Promise<void>;
+  reorderJob: (jobId: string, newOrder: number) => Promise<void>;
   deleteJob: (id: string) => Promise<void>;
   editJob: (id: string, updated: Partial<Job>) => Promise<void>;
 }

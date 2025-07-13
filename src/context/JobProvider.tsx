@@ -1,14 +1,15 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { JobContext, Job, JobStatus } from "./JobContext";
 import {
   collection,
-  getDocs,
   addDoc,
   doc,
   updateDoc,
   deleteDoc,
   query,
   where,
+  onSnapshot,
+  orderBy,
 } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { useAuthContext } from "./useAuthContext";
@@ -17,20 +18,22 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const { user } = useAuthContext();
 
-  // 🔄 Fetch jobs that belong to the current user
-  const fetchJobs = useCallback(async () => {
+  // 🔄 Live-sync Firestore jobs to local state
+  useEffect(() => {
     if (!user) return;
 
     const jobsRef = collection(db, "jobs");
-    const q = query(jobsRef, where("userId", "==", user.uid));
-    const snapshot = await getDocs(q);
+    const q = query(jobsRef, where("userId", "==", user.uid), orderBy("order"));
 
-    const userJobs: Job[] = snapshot.docs.map((docSnap) => ({
-      ...(docSnap.data() as Omit<Job, "id">),
-      id: docSnap.id,
-    }));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const userJobs: Job[] = snapshot.docs.map((docSnap) => ({
+        ...(docSnap.data() as Omit<Job, "id">),
+        id: docSnap.id,
+      }));
+      setJobs(userJobs);
+    });
 
-    setJobs(userJobs);
+    return () => unsubscribe();
   }, [user]);
 
   // ➕ Add a new job with an order at the bottom of its column
@@ -44,32 +47,25 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
       userId: user.uid,
       order,
     });
-
-    await fetchJobs();
   };
 
   // 🔁 Move job to a different column (optimistic + persistent)
-  const moveJob = async (
-    jobId: string,
-    newStatus: JobStatus
-  ) => {
+  const moveJob = async (jobId: string, newStatus: JobStatus) => {
     const jobToMove = jobs.find((job) => job.id === jobId);
     if (!jobToMove || jobToMove.status === newStatus) return;
 
-    // 1️⃣ Optimistically update the local UI
+    // Optimistic local update
     setJobs((prevJobs) =>
       prevJobs.map((job) =>
         job.id === jobId ? { ...job, status: newStatus } : job
       )
     );
 
-    // 2️⃣ Persist the change in the background
+    // Persist to Firestore
     try {
       await updateDoc(doc(db, "jobs", jobId), { status: newStatus });
     } catch (err) {
-      console.error("🔥 Failed to update job status in Firestore:", err);
-      // Optionally re-fetch to recover
-      await fetchJobs();
+      console.error("🔥 Failed to update job status:", err);
     }
   };
 
@@ -90,39 +86,28 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
 
     const updatedJobs = jobs.map((job) => {
       const idx = reordered.findIndex((j) => j.id === job.id);
-      return job.status === jobToMove.status
-        ? { ...job, order: idx }
-        : job;
+      return job.status === jobToMove.status ? { ...job, order: idx } : job;
     });
 
-    setJobs(updatedJobs); // ⚡ Optimistic UI
+    setJobs(updatedJobs);
 
-    // 💾 Save new order to Firestore
+    // Save order to Firestore
     for (let i = 0; i < reordered.length; i++) {
       try {
         await updateDoc(doc(db, "jobs", reordered[i].id), { order: i });
       } catch (err) {
-        console.error("🔥 Failed to reorder job:", err);
+        console.error("🔥 Failed to update job order:", err);
       }
     }
   };
 
-  // ❌ Delete job and refresh list
   const deleteJob = async (id: string) => {
     await deleteDoc(doc(db, "jobs", id));
-    await fetchJobs();
   };
 
-  // 📝 Edit job details and refresh list
   const editJob = async (id: string, updated: Partial<Job>) => {
     await updateDoc(doc(db, "jobs", id), updated);
-    await fetchJobs();
   };
-
-  // 🧠 Load jobs when user changes
-  useEffect(() => {
-    if (user) fetchJobs();
-  }, [user, fetchJobs]);
 
   return (
     <JobContext.Provider
@@ -131,7 +116,6 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
         addJob,
         moveJob,
         reorderJob,
-        fetchJobs,
         deleteJob,
         editJob,
       }}
