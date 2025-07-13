@@ -1,3 +1,4 @@
+// src/context/JobProvider.tsx
 import { useEffect, useState, useCallback } from "react";
 import { JobContext, Job, JobStatus } from "./JobContext";
 import {
@@ -17,7 +18,7 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const { user } = useAuthContext();
 
-  // ✅ Securely fetch only jobs belonging to the current user using Firestore query
+  // 🔄 Fetch jobs that belong to the current user
   const fetchJobs = useCallback(async () => {
     if (!user) return;
 
@@ -33,39 +34,100 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     setJobs(userJobs);
   }, [user]);
 
-  // ✅ Add a new job for the current user
+  // ➕ Add a new job with an order at the bottom of its column
   const addJob = async (job: Omit<Job, "id" | "userId">) => {
     if (!user) return;
-    await addDoc(collection(db, "jobs"), { ...job, userId: user.uid });
+    const columnJobs = jobs.filter((j) => j.status === job.status);
+    const order = columnJobs.length;
+
+    await addDoc(collection(db, "jobs"), {
+      ...job,
+      userId: user.uid,
+      order,
+    });
+
     await fetchJobs();
   };
 
-  // ✅ Move job between statuses
-  const moveJob = async (jobId: string, status: JobStatus) => {
-    await updateDoc(doc(db, "jobs", jobId), { status });
+  // 🔁 Move job to a different column and refresh job list
+  const moveJob = async (
+    jobId: string,
+    newStatus: JobStatus,
+    optimistic = false
+  ) => {
+    if (optimistic) {
+      setJobs((prevJobs) =>
+        prevJobs.map((job) =>
+          job.id === jobId ? { ...job, status: newStatus } : job
+        )
+      );
+      return;
+    }
+
+    await updateDoc(doc(db, "jobs", jobId), { status: newStatus });
+
+    // 🔄 Refresh job list so ghost logic works correctly
     await fetchJobs();
   };
 
-  // ✅ Delete a job
+  // ⬆️⬇️ Reorder jobs within the same column and persist order
+  const reorderJob = async (jobId: string, newOrder: number) => {
+    const jobToMove = jobs.find((job) => job.id === jobId);
+    if (!jobToMove) return;
+
+    const sameStatusJobs = jobs
+      .filter((job) => job.status === jobToMove.status && job.id !== jobId)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    const reordered = [
+      ...sameStatusJobs.slice(0, newOrder),
+      jobToMove,
+      ...sameStatusJobs.slice(newOrder),
+    ];
+
+    const updatedJobs = jobs.map((job) => {
+      const idx = reordered.findIndex((j) => j.id === job.id);
+      return job.status === jobToMove.status
+        ? { ...job, order: idx }
+        : job;
+    });
+
+    setJobs(updatedJobs); // Optimistic update for snappy UI
+
+    // 🧱 Persist updated order to Firestore
+    for (let i = 0; i < reordered.length; i++) {
+      await updateDoc(doc(db, "jobs", reordered[i].id), { order: i });
+    }
+  };
+
+  // ❌ Delete job and refresh list
   const deleteJob = async (id: string) => {
     await deleteDoc(doc(db, "jobs", id));
     await fetchJobs();
   };
 
-  // ✅ Edit a job (partial update)
+  // 📝 Edit job details and refresh list
   const editJob = async (id: string, updated: Partial<Job>) => {
     await updateDoc(doc(db, "jobs", id), updated);
     await fetchJobs();
   };
 
-  // ✅ Re-fetch jobs when user logs in
+  // 🧠 Load jobs when user changes
   useEffect(() => {
     if (user) fetchJobs();
   }, [user, fetchJobs]);
 
   return (
     <JobContext.Provider
-      value={{ jobs, addJob, moveJob, fetchJobs, deleteJob, editJob }}
+      value={{
+        jobs,
+        addJob,
+        moveJob,
+        reorderJob,
+        fetchJobs,
+        deleteJob,
+        editJob,
+      }}
     >
       {children}
     </JobContext.Provider>

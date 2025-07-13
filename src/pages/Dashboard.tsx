@@ -42,7 +42,7 @@ const Dashboard = () => {
 
       {/* Kanban Board */}
       <DragDropContext>
-        {(hoveredColumn) => (
+        {(hoveredColumn, activeId, activeJob, tempJobState) => (
           <>
             {/* Mobile View: Single Column */}
             <div className="block xl:hidden">
@@ -51,6 +51,8 @@ const Dashboard = () => {
                 title={mobileStatus}
                 jobs={jobs.filter((j) => j.status === mobileStatus)}
                 isHovered={hoveredColumn === mobileStatus}
+                activeId={activeId}
+                tempJobState={tempJobState}
               />
             </div>
 
@@ -62,6 +64,8 @@ const Dashboard = () => {
                   title={status}
                   jobs={jobs.filter((j) => j.status === status)}
                   isHovered={hoveredColumn === status}
+                  activeId={activeId}
+                  tempJobState={tempJobState}
                 />
               ))}
             </div>

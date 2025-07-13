@@ -1,15 +1,21 @@
 import {
   DndContext,
   DragStartEvent,
+  DragOverEvent,
   DragEndEvent,
   DragOverlay,
   closestCenter,
-  Over,
 } from "@dnd-kit/core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useJobContext } from "../context/useJobContext";
-import type { Job } from "../context/JobContext";
+import type { Job, JobStatus } from "../context/JobContext";
 import JobCard from "./JobCard";
+
+type TempJobMove = {
+  id: string;
+  newStatus: JobStatus;
+  newIndex: number;
+};
 
 const DragDropContext = ({
   children,
@@ -18,59 +24,96 @@ const DragDropContext = ({
     hoveredColumn: string | null,
     activeId: string | null,
     activeJob?: Job,
-    tempJobState?: { id: string; newStatus: string } | null
+    tempJobState?: TempJobMove | null
   ) => React.ReactNode;
 }) => {
-  const { jobs, moveJob } = useJobContext();
+  const { jobs, moveJob, reorderJob } = useJobContext();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
-  const [tempJobState, setTempJobState] = useState<{
-    id: string;
-    newStatus: string;
-  } | null>(null);
+  const [tempJobState, setTempJobState] = useState<TempJobMove | null>(null);
+  const [queuedReorder, setQueuedReorder] = useState<TempJobMove | null>(null);
+
+  const activeJob = jobs.find((job) => job.id === activeId);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
 
-  const handleDragOver = (event: { over: Over | null }) => {
-    const overId = event.over?.id;
-    if (typeof overId === "string") {
-      setHoveredColumn(overId);
+  const handleDragOver = (event: DragOverEvent) => {
+    const over = event.over;
+    if (!over?.data?.current) return;
+
+    const overColumnId = over.data.current.columnId;
+    const overIndex = over.data.current.index;
+
+    if (typeof overColumnId === "string") {
+      setHoveredColumn(overColumnId);
+    }
+
+    if (
+      activeId &&
+      typeof overColumnId === "string" &&
+      typeof overIndex === "number"
+    ) {
+      setTempJobState({
+        id: activeId,
+        newStatus: overColumnId as JobStatus,
+        newIndex: overIndex,
+      });
     }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    const jobId = String(active.id);
-    const newStatus = over?.id;
 
-    if (typeof newStatus !== "string") {
+    if (!active || !over?.data?.current) {
       resetDrag();
       return;
     }
 
-    const job = jobs.find((j) => j.id === jobId);
-    if (job && job.status !== newStatus) {
-      // ⏩ Optimistically update UI
-      setTempJobState({ id: jobId, newStatus });
+    const jobId = String(active.id);
+    const newStatus = over.data.current.columnId as JobStatus;
+    const newIndex = over.data.current.index;
 
-      // ⌛ Then call backend/state
-      await moveJob(jobId, newStatus as Job["status"]);
+    const job = jobs.find((j) => j.id === jobId);
+    if (!job) {
+      resetDrag();
+      return;
     }
 
-    resetDrag();
+    const statusChanged = job.status !== newStatus;
+
+    if (statusChanged) {
+      await moveJob(jobId, newStatus); // Moves job to new column
+      setQueuedReorder({ id: jobId, newStatus, newIndex }); // Queue reorder
+    } else {
+      await reorderJob(jobId, newIndex); // Just reorder in same column
+      resetDrag();
+    }
   };
+
+  // 🔁 Reorder only after Firestore reflects the new column status
+  useEffect(() => {
+    if (!queuedReorder) return;
+
+    const { id, newStatus, newIndex } = queuedReorder;
+    const jobInNewColumn = jobs.find(
+      (job) => job.id === id && job.status === newStatus
+    );
+
+    if (jobInNewColumn) {
+      reorderJob(id, newIndex).then(() => {
+        resetDrag();
+        setQueuedReorder(null);
+      });
+    }
+  }, [jobs, queuedReorder, reorderJob]);
 
   const resetDrag = () => {
-    setTimeout(() => {
-      setActiveId(null);
-      setHoveredColumn(null);
-      setTempJobState(null);
-    }, 50);
+    setActiveId(null);
+    setHoveredColumn(null);
+    setTempJobState(null);
   };
-
-  const activeJob = jobs.find((job) => job.id === activeId);
 
   return (
     <DndContext

@@ -25,11 +25,13 @@ module.exports = {
       colors: {
         backdrop: "#0a0a0f",
         "card-dark": "#13141a",
-        "accent-glow": "#8b5cf6", // purple-vibrant
+        "accent-glow": "#8b5cf6",
         "btn-gradient-start": "#6366f1",
         "btn-gradient-end": "#14b8a6",
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require("@tailwindcss/line-clamp"), // ✅ Add this line
+  ],
 };

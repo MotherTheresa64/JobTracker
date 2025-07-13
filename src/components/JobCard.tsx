@@ -1,94 +1,88 @@
-import { useDraggable } from "@dnd-kit/core";
+import { useState } from "react";
 import type { Job } from "../context/JobContext";
 import { useJobContext } from "../context/useJobContext";
-import { useState } from "react";
 import EditJobModal from "./EditJobModal";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
 interface Props {
   job: Job;
-  isOverlay?: boolean;
+  isOverlay?: boolean; // ✅ Support for drag overlay
 }
 
 const JobCard = ({ job, isOverlay = false }: Props) => {
   const { deleteJob } = useJobContext();
-  const [editing, setEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({ id: job.id });
-
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        transition: isOverlay ? "transform 150ms ease" : undefined,
-      }
-    : undefined;
-
-  if (isDragging && !isOverlay) return null;
+  const handleDelete = async () => {
+    if (confirm("Are you sure you want to delete this job?")) {
+      await deleteJob(job.id);
+    }
+  };
 
   return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      style={style}
-      className={`bg-card-dark border border-zinc-600 text-white p-4 rounded-xl shadow-md transition-transform duration-200 hover:scale-[1.01] relative animate-slide-up ${
-        isOverlay ? "opacity-90 scale-105" : ""
-      }`}
-    >
-      {/* Top section: title + drag */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-base font-semibold truncate">{job.title}</h3>
-          <p className="text-xs text-gray-400 truncate">{job.company}</p>
+    <>
+      <div
+        className={`relative bg-zinc-900 border border-zinc-700 rounded-lg p-4 shadow transition ${
+          isOverlay
+            ? "opacity-90 scale-[1.01] cursor-grabbing pointer-events-none"
+            : "hover:shadow-lg group"
+        }`}
+        onMouseDown={(e) => {
+          if (!isOverlay) e.stopPropagation(); // 🧠 Prevent drag interference unless overlay
+        }}
+      >
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-white truncate">{job.title}</h3>
+            <p className="text-sm text-zinc-400 truncate">{job.company}</p>
+          </div>
+
+          {!isOverlay && (
+            <GripVertical className="text-zinc-500 hover:text-white cursor-grab active:cursor-grabbing" />
+          )}
         </div>
-        <div
-          {...listeners}
-          className="text-gray-500 hover:text-white cursor-grab active:cursor-grabbing text-xl"
-          title="Drag to move"
-        >
-          ⠿
-        </div>
+
+        {job.link && (
+          <a
+            href={job.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-blue-400 text-sm mt-2 hover:underline"
+          >
+            🔗 View Posting
+          </a>
+        )}
+
+        {job.notes && (
+          <div className="relative mt-1 max-h-[4.5em] overflow-hidden text-xs text-zinc-400">
+            <p className="line-clamp-3 pr-1">🗃️ {job.notes}</p>
+            {/* Fade for visual cue */}
+            <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-zinc-900 to-transparent pointer-events-none" />
+          </div>
+        )}
+
+        {!isOverlay && (
+          <div className="flex justify-between mt-4 text-sm">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-1 text-yellow-400 hover:text-yellow-300"
+            >
+              <Pencil className="w-4 h-4" /> Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex items-center gap-1 text-red-500 hover:text-red-400"
+            >
+              <Trash2 className="w-4 h-4" /> Delete
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Link */}
-      {job.link && (
-        <a
-          href={job.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-400 text-xs underline block mt-2 hover:text-blue-300 transition"
-        >
-          🔗 View Posting
-        </a>
+      {!isOverlay && isEditing && (
+        <EditJobModal job={job} onClose={() => setIsEditing(false)} />
       )}
-
-      {/* Notes */}
-      {job.notes && (
-        <p className="text-xs mt-2 text-gray-400 italic leading-snug">
-          🗃️ {job.notes}
-        </p>
-      )}
-
-      {/* Actions */}
-      <div className="mt-3 flex gap-4 text-xs font-medium">
-        <button
-          onClick={() => setEditing(true)}
-          className="text-yellow-400 hover:text-yellow-300 transition"
-        >
-          ✏️ Edit
-        </button>
-        <button
-          onClick={() => {
-            if (confirm("Delete this job?")) deleteJob(job.id);
-          }}
-          className="text-red-400 hover:text-red-300 transition"
-        >
-          🧾 Delete
-        </button>
-      </div>
-
-      {/* Modal */}
-      {editing && <EditJobModal job={job} onClose={() => setEditing(false)} />}
-    </div>
+    </>
   );
 };
 
