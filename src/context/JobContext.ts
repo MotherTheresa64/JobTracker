@@ -10,7 +10,7 @@ export interface Job {
   userId: string;
   notes?: string;
   link?: string;
-  order?: number; // 🆕 Used for ordering within a column
+  order?: number; // Used for ordering within a column
 }
 
 export interface JobContextType {
@@ -18,6 +18,7 @@ export interface JobContextType {
   addJob: (job: Omit<Job, "id" | "userId">) => Promise<void>;
   moveJob: (jobId: string, status: JobStatus) => Promise<void>;
   reorderJob: (jobId: string, newOrder: number) => Promise<void>;
+  fetchJobs: () => Promise<void>;
   deleteJob: (id: string) => Promise<void>;
   editJob: (id: string, updated: Partial<Job>) => Promise<void>;
 }
