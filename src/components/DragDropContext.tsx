@@ -27,7 +27,7 @@ const DragDropContext = ({
     tempJobState?: TempJobMove | null
   ) => React.ReactNode;
 }) => {
-  const { jobs, moveJob, reorderJob } = useJobContext();
+  const { jobs, moveJob, reorderJob, fetchJobs } = useJobContext();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [hoveredColumn, setHoveredColumn] = useState<string | null>(null);
   const [tempJobState, setTempJobState] = useState<TempJobMove | null>(null);
@@ -83,11 +83,14 @@ const DragDropContext = ({
     const statusChanged = job.status !== newStatus;
 
     if (statusChanged) {
-      await moveJob(jobId, newStatus);           // ✅ update status + order
-      await reorderJob(jobId, newIndex);         // ✅ immediately reorder
+      await moveJob(jobId, newStatus);
+      await reorderJob(jobId, newIndex);
     } else {
-      await reorderJob(jobId, newIndex);         // same-column reorder
+      await reorderJob(jobId, newIndex);
     }
+
+    // ✅ Force refresh from Firestore after move/reorder
+    await fetchJobs();
 
     resetDrag();
   };
