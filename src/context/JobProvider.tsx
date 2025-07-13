@@ -1,4 +1,3 @@
-// src/context/JobProvider.tsx
 import { useEffect, useState, useCallback } from "react";
 import { JobContext, Job, JobStatus } from "./JobContext";
 import {
@@ -49,25 +48,29 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     await fetchJobs();
   };
 
-  // 🔁 Move job to a different column and refresh job list
+  // 🔁 Move job to a different column (optimistic + persistent)
   const moveJob = async (
     jobId: string,
-    newStatus: JobStatus,
-    optimistic = false
+    newStatus: JobStatus
   ) => {
-    if (optimistic) {
-      setJobs((prevJobs) =>
-        prevJobs.map((job) =>
-          job.id === jobId ? { ...job, status: newStatus } : job
-        )
-      );
-      return;
+    const jobToMove = jobs.find((job) => job.id === jobId);
+    if (!jobToMove || jobToMove.status === newStatus) return;
+
+    // 1️⃣ Optimistically update the local UI
+    setJobs((prevJobs) =>
+      prevJobs.map((job) =>
+        job.id === jobId ? { ...job, status: newStatus } : job
+      )
+    );
+
+    // 2️⃣ Persist the change in the background
+    try {
+      await updateDoc(doc(db, "jobs", jobId), { status: newStatus });
+    } catch (err) {
+      console.error("🔥 Failed to update job status in Firestore:", err);
+      // Optionally re-fetch to recover
+      await fetchJobs();
     }
-
-    await updateDoc(doc(db, "jobs", jobId), { status: newStatus });
-
-    // 🔄 Refresh job list so ghost logic works correctly
-    await fetchJobs();
   };
 
   // ⬆️⬇️ Reorder jobs within the same column and persist order
@@ -92,11 +95,15 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
         : job;
     });
 
-    setJobs(updatedJobs); // Optimistic update for snappy UI
+    setJobs(updatedJobs); // ⚡ Optimistic UI
 
-    // 🧱 Persist updated order to Firestore
+    // 💾 Save new order to Firestore
     for (let i = 0; i < reordered.length; i++) {
-      await updateDoc(doc(db, "jobs", reordered[i].id), { order: i });
+      try {
+        await updateDoc(doc(db, "jobs", reordered[i].id), { order: i });
+      } catch (err) {
+        console.error("🔥 Failed to reorder job:", err);
+      }
     }
   };
 
