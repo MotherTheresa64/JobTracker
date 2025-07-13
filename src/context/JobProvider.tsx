@@ -15,7 +15,7 @@ import { useAuthContext } from "./useAuthContext";
 
 export const JobProvider = ({ children }: { children: React.ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [version, setVersion] = useState<number>(0); // ✅ new reactive version
+  const [version, setVersion] = useState(0); // ✅ Version to force UI updates
   const { user } = useAuthContext();
 
   const fetchJobs = useCallback(async () => {
@@ -31,7 +31,7 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     }));
 
     setJobs(userJobs);
-    setVersion(Date.now()); // ✅ re-render trigger
+    setVersion((v) => v + 1); // ✅ Update version after fetching
   }, [user]);
 
   const addJob = async (job: Omit<Job, "id" | "userId">) => {
@@ -52,25 +52,17 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     const jobToMove = jobs.find((job) => job.id === jobId);
     if (!jobToMove || jobToMove.status === newStatus) return;
 
-    const newColumnJobs = jobs.filter((j) => j.status === newStatus);
-    const newOrder = newColumnJobs.length;
-
     setJobs((prevJobs) =>
       prevJobs.map((job) =>
-        job.id === jobId
-          ? { ...job, status: newStatus, order: newOrder }
-          : job
+        job.id === jobId ? { ...job, status: newStatus } : job
       )
     );
-    setVersion(Date.now()); // ✅ force column update
 
     try {
-      await updateDoc(doc(db, "jobs", jobId), {
-        status: newStatus,
-        order: newOrder,
-      });
+      await updateDoc(doc(db, "jobs", jobId), { status: newStatus });
+      setVersion((v) => v + 1); // ✅ Force rerender after status change
     } catch (err) {
-      console.error("🔥 Failed to update job:", err);
+      console.error("🔥 Failed to update job status in Firestore:", err);
       await fetchJobs();
     }
   };
@@ -97,13 +89,13 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     setJobs(updatedJobs);
-    setVersion(Date.now()); // ✅ re-render after reorder
+    setVersion((v) => v + 1); // ✅ Trigger re-render for order change
 
     for (let i = 0; i < reordered.length; i++) {
       try {
         await updateDoc(doc(db, "jobs", reordered[i].id), { order: i });
       } catch (err) {
-        console.error("🔥 Failed to persist reorder:", err);
+        console.error("🔥 Failed to reorder job:", err);
       }
     }
   };
@@ -126,13 +118,13 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     <JobContext.Provider
       value={{
         jobs,
-        version,
         addJob,
         moveJob,
         reorderJob,
         fetchJobs,
         deleteJob,
         editJob,
+        version, // ✅ expose version
       }}
     >
       {children}

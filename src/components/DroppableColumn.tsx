@@ -5,19 +5,19 @@ import {
 import { useDroppable } from "@dnd-kit/core";
 import { useMemo } from "react";
 import SortableJobCard from "./SortableJobCard";
-import type { Job } from "../context/JobContext";
+import type { Job, JobStatus } from "../context/JobContext";
 import { useJobModal } from "../hooks/useJobModal";
 
 interface Props {
-  title: string;
+  title: JobStatus;
   jobs: Job[];
   isHovered: boolean;
   activeId?: string | null;
-  tempJobState?: { id: string; newStatus: string; newIndex: number } | null;
-  version?: number; // 🔄 added to track order/status updates
+  tempJobState?: { id: string; newStatus: JobStatus; newIndex: number } | null;
+  version?: number;
 }
 
-const statusStyles: Record<string, { gradient: string; icon: string }> = {
+const statusStyles: Record<JobStatus, { gradient: string; icon: string }> = {
   wishlist: { gradient: "from-indigo-500 to-blue-500", icon: "⭐" },
   applied: { gradient: "from-purple-600 to-pink-500", icon: "📤" },
   interview: { gradient: "from-yellow-500 to-orange-500", icon: "📞" },
@@ -31,7 +31,7 @@ const DroppableColumn = ({
   isHovered,
   activeId,
   tempJobState,
-  version, // ✅ force re-compute sortedJobs when order/status changes
+  version,
 }: Props) => {
   const { openModal } = useJobModal();
 
@@ -43,11 +43,11 @@ const DroppableColumn = ({
     },
   });
 
-  const sortedJobs = useMemo(
-    () => [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [jobs, version] // ✅ ensure reactivity
-  );
+  // Sort by `order` whenever jobs or version change
+  const sortedJobs = useMemo(() => {
+    return [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobs, version]);
 
   const isDropTarget =
     isHovered && tempJobState?.newStatus === title;
@@ -62,8 +62,7 @@ const DroppableColumn = ({
     if (
       isDropTarget &&
       tempJobState &&
-      !jobAlreadyExists &&
-      !cloned.find((job) => job.id === tempJobState.id)
+      !jobAlreadyExists
     ) {
       cloned.splice(tempJobState.newIndex, 0, {
         id: tempJobState.id,
@@ -74,17 +73,14 @@ const DroppableColumn = ({
     }
 
     return cloned;
-  }, [sortedJobs, isDropTarget, tempJobState, title, jobAlreadyExists]);
+  }, [sortedJobs, isDropTarget, tempJobState, jobAlreadyExists, title]);
 
   const sortableItems = useMemo(
     () => displayJobs.map((job) => job.id),
     [displayJobs]
   );
 
-  const { gradient, icon } = statusStyles[title] || {
-    gradient: "from-gray-600 to-gray-800",
-    icon: "🗂️",
-  };
+  const { gradient, icon } = statusStyles[title];
 
   return (
     <div
@@ -98,12 +94,12 @@ const DroppableColumn = ({
         className={`bg-gradient-to-r ${gradient} px-4 py-3 text-white text-sm font-bold uppercase tracking-wide flex justify-between items-center`}
       >
         <span>
-          {icon} {title} ({jobs.length})
+          {icon} {title} ({sortedJobs.length})
         </span>
         <span className="text-lg text-white/70">⋮</span>
       </div>
 
-      {/* Job Cards */}
+      {/* Job List */}
       <div className="flex flex-col gap-4 px-4 py-4 min-h-[200px] flex-1">
         <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
           {displayJobs.map((job, index) => {
@@ -127,7 +123,7 @@ const DroppableColumn = ({
 
         {/* Add Job Box */}
         <div
-          onClick={() => openModal(title as Job["status"])}
+          onClick={() => openModal(title)}
           className="border-2 border-dashed border-zinc-500 text-gray-300 text-sm py-6 text-center rounded-md hover:bg-zinc-800 hover:text-white cursor-pointer transition duration-200"
         >
           + Add job
