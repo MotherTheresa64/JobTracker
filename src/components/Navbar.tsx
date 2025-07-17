@@ -18,66 +18,69 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-zinc-950 text-white px-6 py-4 shadow-md fixed top-0 w-full z-50">
+    <nav className="bg-zinc-950 text-white px-4 py-3 shadow-md fixed top-0 w-full z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Left: Logo */}
-        <div className="text-xl font-bold tracking-tight flex items-center gap-2">
-          🎯 <span className="hidden sm:inline">Job Tracker 2025</span>
+        <Link
+          to="/"
+          className="text-lg font-semibold tracking-tight flex items-center gap-2"
+        >
+          🎯 <span className="text-white">TrackForge</span>
+        </Link>
+
+        {/* Desktop Nav */}
+        <div className="hidden sm:flex items-center gap-6 text-sm font-medium">
+          <Link to="/" className="hover:text-purple-400 hover:underline underline-offset-4 transition">
+            Home
+          </Link>
+          {user && (
+            <Link to="/dashboard" className="hover:text-purple-400 hover:underline underline-offset-4 transition">
+              Dashboard
+            </Link>
+          )}
         </div>
+
+        {/* Desktop Right - Auth Info + Logout */}
+        {user && (
+          <div className="hidden sm:flex items-center gap-3 text-sm text-gray-300">
+            <span className="text-xs">
+              Signed in as{" "}
+              <span className="text-white font-medium">{user.email}</span>
+            </span>
+            <button
+              onClick={handleLogout}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs transition"
+            >
+              Logout
+            </button>
+          </div>
+        )}
 
         {/* Mobile Hamburger */}
         <button
           onClick={() => setMenuOpen((prev) => !prev)}
           className="sm:hidden text-white"
         >
-          {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          {menuOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
-
-        {/* Links - Desktop */}
-        <div className="hidden sm:flex items-center gap-6 text-sm font-medium">
-          <Link to="/" className="hover:text-purple-400 transition">Home</Link>
-          {user && <Link to="/dashboard" className="hover:text-purple-400 transition">Dashboard</Link>}
-        </div>
-
-        {/* Auth Controls */}
-        <div className="hidden sm:flex items-center gap-3">
-          {user && (
-            <span className="text-xs text-gray-400">Signed in as: <strong>{user.email}</strong></span>
-          )}
-          {user ? (
-            <button
-              onClick={handleLogout}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm transition"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link
-              to="/auth"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm transition"
-            >
-              Login
-            </Link>
-          )}
-        </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="sm:hidden mt-4 flex flex-col gap-3 px-4 text-sm font-medium">
+        <div className="sm:hidden mt-3 px-4 flex flex-col gap-3 text-sm font-medium">
           <Link to="/" className="hover:text-purple-400 transition">Home</Link>
           {user && <Link to="/dashboard" className="hover:text-purple-400 transition">Dashboard</Link>}
           {user ? (
             <button
               onClick={handleLogout}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm transition"
+              className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm transition"
             >
               Logout
             </button>
           ) : (
             <Link
               to="/auth"
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm transition"
+              className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm transition"
             >
               Login
             </Link>

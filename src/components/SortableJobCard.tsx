@@ -1,4 +1,3 @@
-// src/components/SortableJobCard.tsx
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Job } from "../context/JobContext";
@@ -21,7 +20,7 @@ const SortableJobCard = ({
   isOverlay = false,
   isGhost = false,
 }: Props) => {
-  const { deleteJob } = useJobContext();
+  const { deleteJob, moveJob } = useJobContext();
   const [isEditing, setIsEditing] = useState(false);
 
   const {
@@ -83,12 +82,13 @@ const SortableJobCard = ({
             <p className="text-xs text-gray-400 truncate">{job.company}</p>
           </div>
 
+          {/* ⠿ Drag handle — only on desktop */}
           {!isOverlay && (
             <div
               ref={setActivatorNodeRef}
               {...attributes}
               {...listeners}
-              className="text-gray-500 hover:text-white cursor-grab active:cursor-grabbing text-xl"
+              className="hidden md:block text-zinc-500 hover:text-white cursor-grab active:cursor-grabbing text-xl"
               title="Drag to reorder"
             >
               ⠿
@@ -115,22 +115,45 @@ const SortableJobCard = ({
         )}
 
         {!isOverlay && (
-          <div className="mt-3 flex gap-4 text-xs font-medium">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="text-yellow-400 hover:text-yellow-300 transition"
-            >
-              ✏️ Edit
-            </button>
-            <button
-              onClick={() => {
-                if (confirm("Delete this job?")) deleteJob(job.id);
-              }}
-              className="text-red-400 hover:text-red-300 transition"
-            >
-              🧾 Delete
-            </button>
-          </div>
+          <>
+            <div className="mt-3 flex gap-4 text-xs font-medium">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-yellow-400 hover:text-yellow-300 transition"
+              >
+                ✏️ Edit
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm("Delete this job?")) deleteJob(job.id);
+                }}
+                className="text-red-400 hover:text-red-300 transition"
+              >
+                🧾 Delete
+              </button>
+            </div>
+
+            {/* 📱 Polished Mobile Status Selector */}
+            <div className="block md:hidden mt-4">
+              <div className="text-xs text-zinc-400 mb-1">Change Status</div>
+              <div className="relative">
+                <select
+                  value={job.status}
+                  onChange={(e) => moveJob(job.id, e.target.value as Job["status"])}
+                  className="w-full appearance-none bg-zinc-800 border border-zinc-600 text-sm text-white px-3 py-2 rounded-md pr-10 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                >
+                  <option value="wishlist">⭐ Wishlist</option>
+                  <option value="applied">📤 Applied</option>
+                  <option value="interview">📞 Interview</option>
+                  <option value="offer">🎉 Offer</option>
+                  <option value="rejected">❌ Rejected</option>
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                  ⌄
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </div>
 

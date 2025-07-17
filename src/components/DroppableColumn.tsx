@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import SortableJobCard from "./SortableJobCard";
 import type { Job, JobStatus } from "../context/JobContext";
 import { useJobModal } from "../hooks/useJobModal";
+import { Plus } from "lucide-react";
 
 interface Props {
   title: JobStatus;
@@ -43,10 +44,8 @@ const DroppableColumn = ({
     },
   });
 
-  // Sort by `order` whenever jobs or version change
   const sortedJobs = useMemo(() => {
     return [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobs, version]);
 
   const isDropTarget =
@@ -96,7 +95,16 @@ const DroppableColumn = ({
         <span>
           {icon} {title} ({sortedJobs.length})
         </span>
-        <span className="text-lg text-white/70">⋮</span>
+
+        {/* Animated Add Job Button */}
+        <button
+          onClick={() => openModal(title)}
+          title="Add new job"
+          className="p-1.5 rounded-full border border-white/20 text-white/80 hover:bg-white/10 hover:text-white transition hover:scale-110 animate-pulse"
+          aria-label={`Add job to ${title}`}
+        >
+          <Plus size={20} strokeWidth={2.5} />
+        </button>
       </div>
 
       {/* Job List */}
@@ -120,14 +128,6 @@ const DroppableColumn = ({
             );
           })}
         </SortableContext>
-
-        {/* Add Job Box */}
-        <div
-          onClick={() => openModal(title)}
-          className="border-2 border-dashed border-zinc-500 text-gray-300 text-sm py-6 text-center rounded-md hover:bg-zinc-800 hover:text-white cursor-pointer transition duration-200"
-        >
-          + Add job
-        </div>
       </div>
     </div>
   );
