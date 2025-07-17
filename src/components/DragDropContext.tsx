@@ -1,3 +1,4 @@
+// src/components/DragDropContext.tsx
 import {
   DndContext,
   DragStartEvent,
@@ -90,10 +91,10 @@ const DragDropContext = ({
     } catch (err) {
       console.error("Drag update failed:", err);
     } finally {
-      // Wait briefly before refreshing jobs to allow Firestore write to complete
-      setTimeout(async () => {
-        await fetchJobs();
-      }, 100); // optional: tweak as needed
+      // Slight delay to prevent UI flicker before Firestore finishes update
+      setTimeout(() => {
+        fetchJobs();
+      }, 100);
 
       resetDrag();
     }

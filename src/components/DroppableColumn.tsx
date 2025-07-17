@@ -115,19 +115,19 @@ const DroppableColumn = ({
               tempJobState?.newStatus === title &&
               !jobAlreadyExists;
 
-            const isBeingDragged = activeId === job.id;
+            const isDragging = activeId === job.id;
 
-            // ✅ Hide original card during drag to prevent snap-back
-            if (!isGhost && isBeingDragged) return null;
+            // 🔥 Hide the original card while dragging (no flicker)
+            if (!isGhost && isDragging) return null;
 
             return (
               <SortableJobCard
                 key={`${job.id}-${index}`}
                 job={job}
                 index={index}
-                isDragging={isBeingDragged}
+                isDragging={isDragging}
                 isOverlay={false}
-                isGhost={!!isGhost}
+                isGhost={isGhost}
               />
             );
           })}
