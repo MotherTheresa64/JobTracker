@@ -82,17 +82,21 @@ const DragDropContext = ({
 
     const statusChanged = job.status !== newStatus;
 
-    if (statusChanged) {
-      await moveJob(jobId, newStatus);
+    try {
+      if (statusChanged) {
+        await moveJob(jobId, newStatus);
+      }
       await reorderJob(jobId, newIndex);
-    } else {
-      await reorderJob(jobId, newIndex);
+    } catch (err) {
+      console.error("Drag update failed:", err);
+    } finally {
+      // Wait briefly before refreshing jobs to allow Firestore write to complete
+      setTimeout(async () => {
+        await fetchJobs();
+      }, 100); // optional: tweak as needed
+
+      resetDrag();
     }
-
-    // ✅ Force refresh from Firestore after move/reorder
-    await fetchJobs();
-
-    resetDrag();
   };
 
   const resetDrag = () => {
@@ -109,6 +113,7 @@ const DragDropContext = ({
       collisionDetection={closestCenter}
     >
       {children(hoveredColumn, activeId, activeJob, tempJobState)}
+
       <DragOverlay>
         {activeJob && <JobCard job={activeJob} isOverlay />}
       </DragOverlay>
