@@ -47,7 +47,8 @@ const DroppableColumn = ({
     return [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [jobs]);
 
-  const isDropTarget = isHovered && tempJobState?.newStatus === title;
+  const isDropTarget =
+    isHovered && tempJobState?.newStatus === title;
 
   const jobAlreadyExists = useMemo(() => {
     return sortedJobs.some((job) => job.id === tempJobState?.id);
@@ -114,12 +115,17 @@ const DroppableColumn = ({
               tempJobState?.newStatus === title &&
               !jobAlreadyExists;
 
+            const isBeingDragged = activeId === job.id;
+
+            // ✅ Hide original card during drag to prevent snap-back
+            if (!isGhost && isBeingDragged) return null;
+
             return (
               <SortableJobCard
                 key={`${job.id}-${index}`}
                 job={job}
                 index={index}
-                isDragging={activeId === job.id}
+                isDragging={isBeingDragged}
                 isOverlay={false}
                 isGhost={!!isGhost}
               />
