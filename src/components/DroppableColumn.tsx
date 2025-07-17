@@ -133,4 +133,4 @@ const DroppableColumn = ({
   );
 };
 
-export default DroppableColumn;
+export default DroppableColumn; 
