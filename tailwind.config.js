@@ -32,6 +32,6 @@ module.exports = {
     },
   },
   plugins: [
-    require("@tailwindcss/line-clamp"), // ✅ Add this line
+    require("@tailwindcss/line-clamp"), // ✅ Plugin for clamping text lines
   ],
 };

@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "jsx": "react-jsx",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "target": "ESNext",                          // Latest JS features
+    "module": "ESNext",                          // Modern module syntax
+    "jsx": "react-jsx",                          // JSX transform (React 17+)
+    "moduleResolution": "bundler",               // Used for Vite projects
+    "strict": true,                              // Enable all strict type-checking
+    "esModuleInterop": true,                     // Allow CommonJS/ESModule compatibility
+    "forceConsistentCasingInFileNames": true,    // ✅ Catch path case mismatch
+    "skipLibCheck": true                         // Skip type checking on external libs
   },
-  "include": ["src"]
+  "include": ["src"]                             // Only include files inside /src
 }

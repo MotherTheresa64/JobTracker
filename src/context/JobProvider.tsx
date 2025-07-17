@@ -1,3 +1,4 @@
+// src/context/JobProvider.tsx
 import { useEffect, useState, useCallback } from "react";
 import { JobContext, Job, JobStatus } from "./JobContext";
 import {
@@ -15,7 +16,7 @@ import { useAuthContext } from "./useAuthContext";
 
 export const JobProvider = ({ children }: { children: React.ReactNode }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [version, setVersion] = useState(0); // ✅ Version to force UI updates
+  const [version, setVersion] = useState<number>(0); // 🔄 force re-renders
   const { user } = useAuthContext();
 
   const fetchJobs = useCallback(async () => {
@@ -31,7 +32,7 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     }));
 
     setJobs(userJobs);
-    setVersion((v) => v + 1); // ✅ Update version after fetching
+    setVersion((v) => v + 1); // 🔄 trigger re-renders
   }, [user]);
 
   const addJob = async (job: Omit<Job, "id" | "userId">) => {
@@ -60,9 +61,9 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       await updateDoc(doc(db, "jobs", jobId), { status: newStatus });
-      setVersion((v) => v + 1); // ✅ Force rerender after status change
+      setVersion((v) => v + 1); // 🔄 force refresh
     } catch (err) {
-      console.error("🔥 Failed to update job status in Firestore:", err);
+      console.error("Failed to update status:", err);
       await fetchJobs();
     }
   };
@@ -89,7 +90,7 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     setJobs(updatedJobs);
-    setVersion((v) => v + 1); // ✅ Trigger re-render for order change
+    setVersion((v) => v + 1); // 🔄
 
     for (let i = 0; i < reordered.length; i++) {
       try {
@@ -118,13 +119,13 @@ export const JobProvider = ({ children }: { children: React.ReactNode }) => {
     <JobContext.Provider
       value={{
         jobs,
+        version, // 🆕 expose version
         addJob,
         moveJob,
         reorderJob,
         fetchJobs,
         deleteJob,
         editJob,
-        version, // ✅ expose version
       }}
     >
       {children}
