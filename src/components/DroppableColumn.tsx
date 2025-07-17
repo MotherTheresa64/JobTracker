@@ -1,3 +1,4 @@
+// src/components/DroppableColumn.tsx
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -15,7 +16,6 @@ interface Props {
   isHovered: boolean;
   activeId?: string | null;
   tempJobState?: { id: string; newStatus: JobStatus; newIndex: number } | null;
-  version?: number;
 }
 
 const statusStyles: Record<JobStatus, { gradient: string; icon: string }> = {
@@ -32,7 +32,6 @@ const DroppableColumn = ({
   isHovered,
   activeId,
   tempJobState,
-  version,
 }: Props) => {
   const { openModal } = useJobModal();
 
@@ -46,10 +45,9 @@ const DroppableColumn = ({
 
   const sortedJobs = useMemo(() => {
     return [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [jobs, version]);
+  }, [jobs]);
 
-  const isDropTarget =
-    isHovered && tempJobState?.newStatus === title;
+  const isDropTarget = isHovered && tempJobState?.newStatus === title;
 
   const jobAlreadyExists = useMemo(() => {
     return sortedJobs.some((job) => job.id === tempJobState?.id);
@@ -96,7 +94,7 @@ const DroppableColumn = ({
           {icon} {title} ({sortedJobs.length})
         </span>
 
-        {/* Animated Add Job Button */}
+        {/* Add Job Button */}
         <button
           onClick={() => openModal(title)}
           title="Add new job"
@@ -133,4 +131,4 @@ const DroppableColumn = ({
   );
 };
 
-export default DroppableColumn; 
+export default DroppableColumn;
