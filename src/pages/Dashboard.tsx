@@ -19,7 +19,7 @@ const Dashboard = () => {
   return (
     <div className="w-full px-4 md:px-10 pt-24">
       {/* Header */}
-      <h1 className="text-2xl font-bold text-white mb-6">🎯 Job Tracker 2025</h1>
+      <h1 className="text-2xl font-bold text-white mb-6">🔨 TrackForge </h1>
 
       {/* Mobile Filter */}
       <div className="block xl:hidden mb-6">
