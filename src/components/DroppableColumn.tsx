@@ -1,4 +1,3 @@
-// src/components/DroppableColumn.tsx
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -47,8 +46,7 @@ const DroppableColumn = ({
     return [...jobs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [jobs]);
 
-  const isDropTarget =
-    isHovered && tempJobState?.newStatus === title;
+  const isDropTarget = isHovered && tempJobState?.newStatus === title;
 
   const jobAlreadyExists = useMemo(() => {
     return sortedJobs.some((job) => job.id === tempJobState?.id);
@@ -67,6 +65,9 @@ const DroppableColumn = ({
         title: "Dragging...",
         company: "",
         status: title,
+        order: 0,
+        link: "",
+        notes: "",
       } as Job);
     }
 
@@ -95,7 +96,6 @@ const DroppableColumn = ({
           {icon} {title} ({sortedJobs.length})
         </span>
 
-        {/* Add Job Button */}
         <button
           onClick={() => openModal(title)}
           title="Add new job"
@@ -117,7 +117,6 @@ const DroppableColumn = ({
 
             const isDragging = activeId === job.id;
 
-            // 🔥 Hide the original card while dragging (no flicker)
             if (!isGhost && isDragging) return null;
 
             return (

@@ -78,11 +78,10 @@ const SortableJobCard = ({
       >
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold truncate">{job.title}</h3>
-            <p className="text-xs text-gray-400 truncate">{job.company}</p>
+            <h3 className="text-base font-semibold truncate">{String(job.title ?? "")}</h3>
+            <p className="text-xs text-gray-400 truncate">{String(job.company ?? "")}</p>
           </div>
 
-          {/* ⠿ Drag handle — only on desktop */}
           {!isOverlay && (
             <div
               ref={setActivatorNodeRef}
@@ -96,7 +95,7 @@ const SortableJobCard = ({
           )}
         </div>
 
-        {job.link && (
+        {job.link && typeof job.link === "string" && (
           <a
             href={job.link}
             target="_blank"
@@ -107,7 +106,7 @@ const SortableJobCard = ({
           </a>
         )}
 
-        {job.notes && (
+        {job.notes && typeof job.notes === "string" && (
           <div className="relative mt-2 max-h-[4.5em] overflow-hidden text-xs text-gray-400">
             <p className="line-clamp-3 pr-1 italic">🗃️ {job.notes}</p>
             <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-card-dark to-transparent pointer-events-none" />

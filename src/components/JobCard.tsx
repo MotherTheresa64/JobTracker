@@ -6,7 +6,7 @@ import { GripVertical, Pencil, Trash2 } from "lucide-react";
 
 interface Props {
   job: Job;
-  isOverlay?: boolean; // ✅ Support for drag overlay
+  isOverlay?: boolean;
 }
 
 const JobCard = ({ job, isOverlay = false }: Props) => {
@@ -28,13 +28,13 @@ const JobCard = ({ job, isOverlay = false }: Props) => {
             : "hover:shadow-lg group"
         }`}
         onMouseDown={(e) => {
-          if (!isOverlay) e.stopPropagation(); // 🧠 Prevent drag interference unless overlay
+          if (!isOverlay) e.stopPropagation();
         }}
       >
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white truncate">{job.title}</h3>
-            <p className="text-sm text-zinc-400 truncate">{job.company}</p>
+            <h3 className="font-semibold text-white truncate">{String(job.title ?? "")}</h3>
+            <p className="text-sm text-zinc-400 truncate">{String(job.company ?? "")}</p>
           </div>
 
           {!isOverlay && (
@@ -42,7 +42,7 @@ const JobCard = ({ job, isOverlay = false }: Props) => {
           )}
         </div>
 
-        {job.link && (
+        {job.link && typeof job.link === "string" && (
           <a
             href={job.link}
             target="_blank"
@@ -53,10 +53,9 @@ const JobCard = ({ job, isOverlay = false }: Props) => {
           </a>
         )}
 
-        {job.notes && (
+        {job.notes && typeof job.notes === "string" && (
           <div className="relative mt-1 max-h-[4.5em] overflow-hidden text-xs text-zinc-400">
             <p className="line-clamp-3 pr-1">🗃️ {job.notes}</p>
-            {/* Fade for visual cue */}
             <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-zinc-900 to-transparent pointer-events-none" />
           </div>
         )}
