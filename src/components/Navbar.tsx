@@ -25,7 +25,7 @@ const Navbar = () => {
           to="/"
           className="text-lg font-semibold tracking-tight flex items-center gap-2"
         >
-          🔨 <span className="text-white">TrackForge</span>
+          🔨 <span className="text-white">TaskForge</span>
         </Link>
 
         {/* Desktop Nav */}
