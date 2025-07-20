@@ -11,7 +11,7 @@ import { Plus } from "lucide-react";
 
 interface Props {
   title: JobStatus;
-  jobs: Job[];
+  jobs: Job[]; // Column jobs
   isHovered: boolean;
   activeId?: string | null;
   tempJobState?: { id: string; newStatus: JobStatus; newIndex: number } | null;
@@ -55,12 +55,16 @@ const DroppableColumn = ({
   const displayJobs = useMemo(() => {
     const cloned = [...sortedJobs];
 
+    const ghostAlreadyPresent = cloned.some(
+      (job) => job.id === tempJobState?.id && job.userId === "ghost"
+    );
+
     if (
       isDropTarget &&
       tempJobState &&
-      !jobAlreadyExists
+      !jobAlreadyExists &&
+      !ghostAlreadyPresent
     ) {
-      // Create a valid ghost job with userId fallback
       cloned.splice(tempJobState.newIndex, 0, {
         id: tempJobState.id,
         title: "Dragging...",
@@ -69,17 +73,14 @@ const DroppableColumn = ({
         order: 0,
         link: "",
         notes: "",
-        userId: "ghost", // satisfies Job type
+        userId: "ghost", // Important for preventing re-renders
       } as Job);
     }
 
     return cloned;
   }, [sortedJobs, isDropTarget, tempJobState, jobAlreadyExists, title]);
 
-  const sortableItems = useMemo(
-    () => displayJobs.map((job) => job.id),
-    [displayJobs]
-  );
+  const sortableItems = useMemo(() => displayJobs.map((job) => job.id), [displayJobs]);
 
   const { gradient, icon } = statusStyles[title];
 
@@ -115,7 +116,7 @@ const DroppableColumn = ({
             const isGhost =
               tempJobState?.id === job.id &&
               tempJobState?.newStatus === title &&
-              !jobAlreadyExists;
+              job.userId === "ghost";
 
             const isDragging = activeId === job.id;
 
@@ -124,7 +125,7 @@ const DroppableColumn = ({
             try {
               return (
                 <SortableJobCard
-                  key={`${job.id}-${index}`}
+                  key={job.id}
                   job={job}
                   index={index}
                   isDragging={isDragging}

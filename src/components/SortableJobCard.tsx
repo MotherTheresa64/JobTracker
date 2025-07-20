@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Job } from "../context/JobContext";
 import { useJobContext } from "../context/useJobContext";
-import { useState, type CSSProperties } from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import EditJobModal from "./EditJobModal";
 
 interface Props {
@@ -36,17 +36,17 @@ const SortableJobCard = ({
       columnId: job.status,
       index,
     },
-    disabled: isGhost,
+    disabled: isGhost, // Prevents DnD hooks from triggering for ghost placeholder
   });
 
-  const style: CSSProperties = {
+  const style: CSSProperties = useMemo(() => ({
     transform: CSS.Transform.toString(transform),
     transition: isGhost ? "none" : transition,
     zIndex: isOverlay ? 999 : "auto",
     opacity: isDragging && !isOverlay ? 0 : 1,
     pointerEvents: isGhost ? "none" : undefined,
     filter: isGhost ? "opacity(0.3)" : undefined,
-  };
+  }), [transform, transition, isGhost, isDragging, isOverlay]);
 
   if (isGhost) {
     return (
@@ -66,7 +66,13 @@ const SortableJobCard = ({
   }
 
   if (isDragging && !isOverlay) {
-    return <div ref={setNodeRef} style={{ height: "96px" }} className="w-full" />;
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ height: "96px" }}
+        className="w-full"
+      />
+    );
   }
 
   return (
@@ -95,7 +101,7 @@ const SortableJobCard = ({
           )}
         </div>
 
-        {job.link && typeof job.link === "string" && (
+        {job.link && (
           <a
             href={job.link}
             target="_blank"
@@ -106,7 +112,7 @@ const SortableJobCard = ({
           </a>
         )}
 
-        {job.notes && typeof job.notes === "string" && (
+        {job.notes && (
           <div className="relative mt-2 max-h-[4.5em] overflow-hidden text-xs text-gray-400">
             <p className="line-clamp-3 pr-1 italic">🗃️ {job.notes}</p>
             <div className="absolute bottom-0 left-0 w-full h-4 bg-gradient-to-t from-card-dark to-transparent pointer-events-none" />
