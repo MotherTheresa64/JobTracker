@@ -19,10 +19,7 @@ type TempJobMove = {
   newIndex: number;
 };
 
-/**
- * A throttle helper for void-returning functions.
- * Limits calls to `fn` to once per `wait` ms.
- */
+/** Throttle helper */
 function throttle<Args extends unknown[]>(
   fn: (...args: Args) => void,
   wait: number
@@ -64,13 +61,14 @@ const DragDropContext = ({
     setActiveId(event.active.id as string);
   }, []);
 
-  // Throttle state updates to at most once every 50ms
   const throttledUpdate = useRef(
     throttle(
       (columnId: string, index: number, id: string) => {
         setHoveredColumn(columnId);
         setTempJobState((prev) =>
-          prev?.id === id && prev.newStatus === columnId && prev.newIndex === index
+          prev?.id === id &&
+          prev.newStatus === columnId &&
+          prev.newIndex === index
             ? prev
             : { id, newStatus: columnId as JobStatus, newIndex: index }
         );
@@ -109,6 +107,10 @@ const DragDropContext = ({
         return;
       }
 
+      // 1) Clear the drag UI immediately
+      resetDrag();
+
+      // 2) Perform writes
       try {
         if (job.status !== newStatus) {
           await moveJob(jobId, newStatus);
@@ -117,8 +119,8 @@ const DragDropContext = ({
       } catch (err) {
         console.error("❌ Drag update failed:", err);
       } finally {
-        setTimeout(fetchJobs, 100);
-        resetDrag();
+        // 3) Refresh local context so the board reflects the change
+        fetchJobs();
       }
     },
     [jobs, moveJob, reorderJob, fetchJobs, resetDrag]
@@ -130,15 +132,10 @@ const DragDropContext = ({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
-      measuring={{
-        droppable: { strategy: MeasuringStrategy.BeforeDragging },
-      }}
+      measuring={{ droppable: { strategy: MeasuringStrategy.BeforeDragging } }}
     >
       {children(hoveredColumn, activeId, activeJob, tempJobState)}
-
-      <DragOverlay>
-        {activeJob && <JobCard job={activeJob} isOverlay />}
-      </DragOverlay>
+      <DragOverlay>{activeJob && <JobCard job={activeJob} isOverlay />}</DragOverlay>
     </DndContext>
   );
 };
