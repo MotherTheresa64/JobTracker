@@ -11,7 +11,7 @@ import { Plus } from "lucide-react";
 
 interface Props {
   title: JobStatus;
-  jobs: Job[]; // Column jobs
+  jobs: Job[];
   isHovered: boolean;
   activeId?: string | null;
   tempJobState?: { id: string; newStatus: JobStatus; newIndex: number } | null;
@@ -49,15 +49,17 @@ const DroppableColumn = ({
   const isDropTarget = isHovered && tempJobState?.newStatus === title;
 
   const jobAlreadyExists = useMemo(() => {
-    return sortedJobs.some((job) => job.id === tempJobState?.id);
-  }, [sortedJobs, tempJobState]);
+    return jobs.some((job) => job.id === tempJobState?.id);
+  }, [jobs, tempJobState?.id]);
+
+  const ghostAlreadyPresent = useMemo(() => {
+    return jobs.some(
+      (job) => job.id === tempJobState?.id && job.userId === "ghost"
+    );
+  }, [jobs, tempJobState?.id]);
 
   const displayJobs = useMemo(() => {
     const cloned = [...sortedJobs];
-
-    const ghostAlreadyPresent = cloned.some(
-      (job) => job.id === tempJobState?.id && job.userId === "ghost"
-    );
 
     if (
       isDropTarget &&
@@ -73,15 +75,15 @@ const DroppableColumn = ({
         order: 0,
         link: "",
         notes: "",
-        userId: "ghost", // Important for preventing re-renders
+        userId: "ghost",
       } as Job);
     }
 
     return cloned;
-  }, [sortedJobs, isDropTarget, tempJobState, jobAlreadyExists, title]);
+  }, [sortedJobs, isDropTarget, tempJobState, jobAlreadyExists, ghostAlreadyPresent, title]);
 
   const sortableItems = useMemo(
-    () => displayJobs.map((job) => job.id),
+    () => displayJobs.map((job) => (job.userId === "ghost" ? `ghost-${job.id}` : job.id)),
     [displayJobs]
   );
 
@@ -123,17 +125,32 @@ const DroppableColumn = ({
 
             const isDragging = activeId === job.id;
 
-            if (!isGhost && isDragging) return null;
-
             try {
+              // Ghost gets a unique key
+              if (isGhost) {
+                return (
+                  <SortableJobCard
+                    key={`ghost-${job.id}`}
+                    job={job}
+                    index={index}
+                    isDragging={false}
+                    isOverlay={false}
+                    isGhost
+                  />
+                );
+              }
+
+              // Skip original job being dragged
+              if (isDragging) return null;
+
               return (
                 <SortableJobCard
                   key={job.id}
                   job={job}
                   index={index}
-                  isDragging={isDragging}
+                  isDragging={false}
                   isOverlay={false}
-                  isGhost={isGhost}
+                  isGhost={false}
                 />
               );
             } catch (err) {

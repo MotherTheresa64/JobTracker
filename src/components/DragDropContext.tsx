@@ -1,3 +1,4 @@
+// src/components/DragDropContext.tsx
 import {
   DndContext,
   DragStartEvent,
@@ -5,8 +6,9 @@ import {
   DragEndEvent,
   DragOverlay,
   closestCenter,
+  MeasuringStrategy,
 } from "@dnd-kit/core";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useJobContext } from "../context/useJobContext";
 import type { Job, JobStatus } from "../context/JobContext";
 import JobCard from "./JobCard";
@@ -16,6 +18,24 @@ type TempJobMove = {
   newStatus: JobStatus;
   newIndex: number;
 };
+
+/**
+ * A throttle helper for void-returning functions.
+ * Limits calls to `fn` to once per `wait` ms.
+ */
+function throttle<Args extends unknown[]>(
+  fn: (...args: Args) => void,
+  wait: number
+): (...args: Args) => void {
+  let last = 0;
+  return (...args: Args) => {
+    const now = Date.now();
+    if (now - last >= wait) {
+      last = now;
+      fn(...args);
+    }
+  };
+}
 
 const DragDropContext = ({
   children,
@@ -34,87 +54,75 @@ const DragDropContext = ({
 
   const activeJob = jobs.find((job) => job.id === activeId);
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const over = event.over;
-    if (!over?.data?.current) return;
-
-    const overColumnId = over.data.current.columnId;
-    const overIndex = over.data.current.index;
-
-    // Only update hovered column if it changed
-    if (
-      typeof overColumnId === "string" &&
-      overColumnId !== hoveredColumn
-    ) {
-      setHoveredColumn(overColumnId);
-    }
-
-    // Only update temp job state if it changed
-    if (
-      activeId &&
-      typeof overColumnId === "string" &&
-      typeof overIndex === "number"
-    ) {
-      const isSame =
-        tempJobState?.id === activeId &&
-        tempJobState?.newStatus === overColumnId &&
-        tempJobState?.newIndex === overIndex;
-
-      if (!isSame) {
-        setTempJobState({
-          id: activeId,
-          newStatus: overColumnId as JobStatus,
-          newIndex: overIndex,
-        });
-      }
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!active || !over?.data?.current) {
-      resetDrag();
-      return;
-    }
-
-    const jobId = String(active.id);
-    const newStatus = over.data.current.columnId as JobStatus;
-    const newIndex = over.data.current.index;
-
-    const job = jobs.find((j) => j.id === jobId);
-    if (!job) {
-      resetDrag();
-      return;
-    }
-
-    const statusChanged = job.status !== newStatus;
-
-    try {
-      if (statusChanged) {
-        await moveJob(jobId, newStatus);
-      }
-      await reorderJob(jobId, newIndex);
-    } catch (err) {
-      console.error("Drag update failed:", err);
-    } finally {
-      setTimeout(() => {
-        fetchJobs();
-      }, 100);
-
-      resetDrag();
-    }
-  };
-
-  const resetDrag = () => {
+  const resetDrag = useCallback(() => {
     setActiveId(null);
     setHoveredColumn(null);
     setTempJobState(null);
-  };
+  }, []);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
+  // Throttle state updates to at most once every 50ms
+  const throttledUpdate = useRef(
+    throttle(
+      (columnId: string, index: number, id: string) => {
+        setHoveredColumn(columnId);
+        setTempJobState((prev) =>
+          prev?.id === id && prev.newStatus === columnId && prev.newIndex === index
+            ? prev
+            : { id, newStatus: columnId as JobStatus, newIndex: index }
+        );
+      },
+      50
+    )
+  ).current;
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const over = event.over?.data?.current;
+      if (!over || !activeId) return;
+      const { columnId, index } = over;
+      if (typeof columnId === "string" && typeof index === "number") {
+        throttledUpdate(columnId, index, activeId);
+      }
+    },
+    [activeId, throttledUpdate]
+  );
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!active || !over?.data?.current) {
+        resetDrag();
+        return;
+      }
+
+      const jobId = String(active.id);
+      const newStatus = over.data.current.columnId as JobStatus;
+      const newIndex = over.data.current.index;
+
+      const job = jobs.find((j) => j.id === jobId);
+      if (!job) {
+        resetDrag();
+        return;
+      }
+
+      try {
+        if (job.status !== newStatus) {
+          await moveJob(jobId, newStatus);
+        }
+        await reorderJob(jobId, newIndex);
+      } catch (err) {
+        console.error("❌ Drag update failed:", err);
+      } finally {
+        setTimeout(fetchJobs, 100);
+        resetDrag();
+      }
+    },
+    [jobs, moveJob, reorderJob, fetchJobs, resetDrag]
+  );
 
   return (
     <DndContext
@@ -122,17 +130,14 @@ const DragDropContext = ({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       collisionDetection={closestCenter}
+      measuring={{
+        droppable: { strategy: MeasuringStrategy.BeforeDragging },
+      }}
     >
       {children(hoveredColumn, activeId, activeJob, tempJobState)}
 
       <DragOverlay>
-        {activeJob ? (
-          <JobCard job={activeJob} isOverlay />
-        ) : (
-          <div className="text-red-500 text-sm px-2 py-1 bg-zinc-800 rounded shadow">
-            Invalid job
-          </div>
-        )}
+        {activeJob && <JobCard job={activeJob} isOverlay />}
       </DragOverlay>
     </DndContext>
   );

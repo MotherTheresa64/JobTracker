@@ -8,34 +8,37 @@ import PrivateRoute from "./components/PrivateRoute";
 import { Toaster } from "react-hot-toast";
 import JobModalRoot from "./components/JobModalRoot";
 import { JobModalProvider } from "./context/JobModalProvider";
+import { ErrorBoundary } from "./components/ErrorBoundary";  // ← import it
 
 function App() {
   return (
     <JobModalProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-gray-100 font-sans">
-        {/* Global Navigation */}
-        <Navbar />
+      <ErrorBoundary>  {/* ← wrap everything inside */}
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-gray-100 font-sans">
+          {/* Global Navigation */}
+          <Navbar />
 
-        {/* Main Route Area */}
-        <main className="p-6 max-w-7xl mx-auto">
-          <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </main>
+          {/* Main Route Area */}
+          <main className="p-6 max-w-7xl mx-auto">
+            <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </main>
 
-        {/* Global Modal Mount Point */}
-        <JobModalRoot />
-      </div>
+          {/* Global Modal Mount Point */}
+          <JobModalRoot />
+        </div>
+      </ErrorBoundary>
     </JobModalProvider>
   );
 }
