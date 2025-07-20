@@ -55,21 +55,18 @@ const DroppableColumn = ({
   const displayJobs = useMemo(() => {
     const cloned = [...sortedJobs];
 
-    if (
-      isDropTarget &&
-      tempJobState &&
-      !jobAlreadyExists
-    ) {
+    if (isDropTarget && tempJobState && !jobAlreadyExists) {
       const ghostJob: Job = {
-        id: typeof tempJobState.id === "string" ? tempJobState.id : `ghost-${Date.now()}`,
+        id: tempJobState.id,
         title: "Dragging...",
         company: "",
         status: title,
         order: 9999,
         link: "",
         notes: "",
-        userId: "ghost-user", // ✅ added to satisfy the required field
+        userId: "ghost-user", // Fixes missing prop
       };
+
       cloned.splice(tempJobState.newIndex, 0, ghostJob);
     }
 
@@ -116,11 +113,10 @@ const DroppableColumn = ({
               !job ||
               typeof job !== "object" ||
               typeof job.id !== "string" ||
-              typeof job.title !== "string" ||
-              typeof job.company !== "string" ||
-              typeof job.status !== "string"
+              typeof job.status !== "string" ||
+              typeof job.title !== "string"
             ) {
-              console.warn("⚠️ Skipping invalid job in DroppableColumn:", job);
+              console.warn("⚠️ Invalid job object skipped in DroppableColumn:", job);
               return null;
             }
 
