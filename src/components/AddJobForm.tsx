@@ -1,3 +1,4 @@
+// src/components/AddJobForm.tsx
 import { useEffect, useRef, useState } from "react";
 import { useJobContext } from "../context/useJobContext";
 import { useJobModal } from "../hooks/useJobModal";
@@ -32,17 +33,12 @@ const AddJobForm = () => {
     closeModal();
   };
 
-  // 🔐 Close on outside click or ESC
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
         closeModal();
       }
     };
-
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") closeModal();
     };
@@ -69,7 +65,12 @@ const AddJobForm = () => {
           </span>
         </h2>
 
+        <label htmlFor="add-title" className="sr-only">Job Title</label>
         <input
+          id="add-title"
+          name="title"
+          type="text"
+          autoComplete="job-title"
           placeholder="Job Title (max 80 chars)"
           value={title}
           onChange={(e) => setTitle(e.target.value.slice(0, 80))}
@@ -78,7 +79,12 @@ const AddJobForm = () => {
           className="w-full mb-3 bg-zinc-800 border border-zinc-600 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
 
+        <label htmlFor="add-company" className="sr-only">Company</label>
         <input
+          id="add-company"
+          name="company"
+          type="text"
+          autoComplete="organization"
           placeholder="Company (max 60 chars)"
           value={company}
           onChange={(e) => setCompany(e.target.value.slice(0, 60))}
@@ -87,15 +93,24 @@ const AddJobForm = () => {
           className="w-full mb-3 bg-zinc-800 border border-zinc-600 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
 
+        <label htmlFor="add-link" className="sr-only">Link to Posting</label>
         <input
+          id="add-link"
+          name="link"
+          type="url"
+          autoComplete="url"
           placeholder="Link to Posting"
           value={link}
           onChange={(e) => setLink(e.target.value)}
           className="w-full mb-3 bg-zinc-800 border border-zinc-600 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
 
+        <label htmlFor="add-notes" className="sr-only">Notes</label>
         <textarea
+          id="add-notes"
+          name="notes"
           placeholder="Notes (max 200 chars)"
+          autoComplete="off"
           value={notes}
           onChange={(e) => setNotes(e.target.value.slice(0, 200))}
           maxLength={200}
@@ -103,7 +118,6 @@ const AddJobForm = () => {
           className="w-full mb-1 bg-zinc-800 border border-zinc-600 px-4 py-2 rounded resize-none focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
 
-        {/* Optional live character count */}
         <div className="text-xs text-gray-400 mb-3 text-right">
           {notes.length}/200
         </div>
