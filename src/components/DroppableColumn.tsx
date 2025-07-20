@@ -60,15 +60,17 @@ const DroppableColumn = ({
       tempJobState &&
       !jobAlreadyExists
     ) {
-      cloned.splice(tempJobState.newIndex, 0, {
-        id: tempJobState.id,
+      const ghostJob: Job = {
+        id: typeof tempJobState.id === "string" ? tempJobState.id : `ghost-${Date.now()}`,
         title: "Dragging...",
         company: "",
         status: title,
-        order: 0,
+        order: 9999,
         link: "",
         notes: "",
-      } as Job);
+        userId: "ghost-user", // ✅ added to satisfy the required field
+      };
+      cloned.splice(tempJobState.newIndex, 0, ghostJob);
     }
 
     return cloned;
@@ -110,6 +112,18 @@ const DroppableColumn = ({
       <div className="flex flex-col gap-4 px-4 py-4 min-h-[200px] flex-1">
         <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
           {displayJobs.map((job, index) => {
+            if (
+              !job ||
+              typeof job !== "object" ||
+              typeof job.id !== "string" ||
+              typeof job.title !== "string" ||
+              typeof job.company !== "string" ||
+              typeof job.status !== "string"
+            ) {
+              console.warn("⚠️ Skipping invalid job in DroppableColumn:", job);
+              return null;
+            }
+
             const isGhost =
               tempJobState?.id === job.id &&
               tempJobState?.newStatus === title &&
