@@ -1,4 +1,3 @@
-// src/components/EditJobModal.tsx
 import { useState, useRef, useEffect } from "react";
 import type { Job, JobStatus } from "../context/JobContext";
 import { useJobContext } from "../context/useJobContext";
@@ -85,6 +84,7 @@ const EditJobModal = ({ job, onClose }: Props) => {
         <select
           id="edit-status"
           name="status"
+          autoComplete="off"
           value={status}
           onChange={(e) => setStatus(e.target.value as JobStatus)}
           className="w-full mb-3 bg-zinc-800 border border-zinc-600 px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"

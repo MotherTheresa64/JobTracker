@@ -1,4 +1,3 @@
-// src/components/AddJobForm.tsx
 import { useEffect, useRef, useState } from "react";
 import { useJobContext } from "../context/useJobContext";
 import { useJobModal } from "../hooks/useJobModal";
