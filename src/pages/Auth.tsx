@@ -32,7 +32,7 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 to-black text-white px-4">
       <div className="w-full max-w-md bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700">
         <h2 className="text-2xl font-bold mb-6 text-center text-white">
-          {isLogin ? "Login to TaskForge" : "Create a New Account"}
+          {isLogin ? "Login to PositionPro" : "Create a New Account"}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
