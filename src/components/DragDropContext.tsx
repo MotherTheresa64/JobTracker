@@ -1,4 +1,3 @@
-// src/components/DragDropContext.tsx
 import {
   DndContext,
   DragStartEvent,
@@ -46,20 +45,32 @@ const DragDropContext = ({
     const overColumnId = over.data.current.columnId;
     const overIndex = over.data.current.index;
 
-    if (typeof overColumnId === "string") {
+    // Only update hovered column if it changed
+    if (
+      typeof overColumnId === "string" &&
+      overColumnId !== hoveredColumn
+    ) {
       setHoveredColumn(overColumnId);
     }
 
+    // Only update temp job state if it changed
     if (
       activeId &&
       typeof overColumnId === "string" &&
       typeof overIndex === "number"
     ) {
-      setTempJobState({
-        id: activeId,
-        newStatus: overColumnId as JobStatus,
-        newIndex: overIndex,
-      });
+      const isSame =
+        tempJobState?.id === activeId &&
+        tempJobState?.newStatus === overColumnId &&
+        tempJobState?.newIndex === overIndex;
+
+      if (!isSame) {
+        setTempJobState({
+          id: activeId,
+          newStatus: overColumnId as JobStatus,
+          newIndex: overIndex,
+        });
+      }
     }
   };
 
@@ -91,7 +102,6 @@ const DragDropContext = ({
     } catch (err) {
       console.error("Drag update failed:", err);
     } finally {
-      // Slight delay to prevent UI flicker before Firestore finishes update
       setTimeout(() => {
         fetchJobs();
       }, 100);
@@ -116,7 +126,13 @@ const DragDropContext = ({
       {children(hoveredColumn, activeId, activeJob, tempJobState)}
 
       <DragOverlay>
-        {activeJob && <JobCard job={activeJob} isOverlay />}
+        {activeJob ? (
+          <JobCard job={activeJob} isOverlay />
+        ) : (
+          <div className="text-red-500 text-sm px-2 py-1 bg-zinc-800 rounded shadow">
+            Invalid job
+          </div>
+        )}
       </DragOverlay>
     </DndContext>
   );
