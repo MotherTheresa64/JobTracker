@@ -1,4 +1,4 @@
-# 🎯 Job Tracker 2025
+# 🎯 TaskForge
 
 A modern, mobile-responsive Kanban-style web app for tracking your job applications with smooth drag-and-drop interactions, filterable mobile view, and real-time UI feedback.
 
