@@ -13,6 +13,19 @@ const JobCard = ({ job, isOverlay = false }: Props) => {
   const { deleteJob } = useJobContext();
   const [isEditing, setIsEditing] = useState(false);
 
+  // ✅ Runtime safety check (after hooks)
+  const isValidJob =
+    job &&
+    typeof job === "object" &&
+    typeof job.id === "string" &&
+    typeof job.title === "string" &&
+    typeof job.company === "string";
+
+  if (!isValidJob) {
+    console.error("Invalid job object passed to JobCard:", job);
+    return null;
+  }
+
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this job?")) {
       await deleteJob(job.id);
@@ -33,8 +46,8 @@ const JobCard = ({ job, isOverlay = false }: Props) => {
       >
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-white truncate">{String(job.title ?? "")}</h3>
-            <p className="text-sm text-zinc-400 truncate">{String(job.company ?? "")}</p>
+            <h3 className="font-semibold text-white truncate">{job.title}</h3>
+            <p className="text-sm text-zinc-400 truncate">{job.company}</p>
           </div>
 
           {!isOverlay && (

@@ -39,6 +39,20 @@ const SortableJobCard = ({
     disabled: isGhost,
   });
 
+  // ✅ Safe validation AFTER hook calls
+  const isValidJob =
+    job &&
+    typeof job === "object" &&
+    typeof job.id === "string" &&
+    typeof job.title === "string" &&
+    typeof job.company === "string" &&
+    typeof job.status === "string";
+
+  if (!isValidJob) {
+    console.error("Invalid job passed to SortableJobCard:", job);
+    return null;
+  }
+
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: isGhost ? "none" : transition,
@@ -78,8 +92,8 @@ const SortableJobCard = ({
       >
         <div className="flex justify-between items-start">
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold truncate">{String(job.title ?? "")}</h3>
-            <p className="text-xs text-gray-400 truncate">{String(job.company ?? "")}</p>
+            <h3 className="text-base font-semibold truncate">{job.title}</h3>
+            <p className="text-xs text-gray-400 truncate">{job.company}</p>
           </div>
 
           {!isOverlay && (
@@ -132,7 +146,7 @@ const SortableJobCard = ({
               </button>
             </div>
 
-            {/* 📱 Polished Mobile Status Selector */}
+            {/* 📱 Mobile Dropdown */}
             <div className="block md:hidden mt-4">
               <div className="text-xs text-zinc-400 mb-1">Change Status</div>
               <div className="relative">
