@@ -80,7 +80,10 @@ const DroppableColumn = ({
     return cloned;
   }, [sortedJobs, isDropTarget, tempJobState, jobAlreadyExists, title]);
 
-  const sortableItems = useMemo(() => displayJobs.map((job) => job.id), [displayJobs]);
+  const sortableItems = useMemo(
+    () => displayJobs.map((job) => job.id),
+    [displayJobs]
+  );
 
   const { gradient, icon } = statusStyles[title];
 
