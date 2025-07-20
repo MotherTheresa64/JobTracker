@@ -55,19 +55,22 @@ const DroppableColumn = ({
   const displayJobs = useMemo(() => {
     const cloned = [...sortedJobs];
 
-    if (isDropTarget && tempJobState && !jobAlreadyExists) {
-      const ghostJob: Job = {
+    if (
+      isDropTarget &&
+      tempJobState &&
+      !jobAlreadyExists
+    ) {
+      // Create a valid ghost job with userId fallback
+      cloned.splice(tempJobState.newIndex, 0, {
         id: tempJobState.id,
         title: "Dragging...",
         company: "",
         status: title,
-        order: 9999,
+        order: 0,
         link: "",
         notes: "",
-        userId: "ghost-user", // Fixes missing prop
-      };
-
-      cloned.splice(tempJobState.newIndex, 0, ghostJob);
+        userId: "ghost", // satisfies Job type
+      } as Job);
     }
 
     return cloned;
@@ -109,17 +112,6 @@ const DroppableColumn = ({
       <div className="flex flex-col gap-4 px-4 py-4 min-h-[200px] flex-1">
         <SortableContext items={sortableItems} strategy={verticalListSortingStrategy}>
           {displayJobs.map((job, index) => {
-            if (
-              !job ||
-              typeof job !== "object" ||
-              typeof job.id !== "string" ||
-              typeof job.status !== "string" ||
-              typeof job.title !== "string"
-            ) {
-              console.warn("⚠️ Invalid job object skipped in DroppableColumn:", job);
-              return null;
-            }
-
             const isGhost =
               tempJobState?.id === job.id &&
               tempJobState?.newStatus === title &&
@@ -129,16 +121,21 @@ const DroppableColumn = ({
 
             if (!isGhost && isDragging) return null;
 
-            return (
-              <SortableJobCard
-                key={`${job.id}-${index}`}
-                job={job}
-                index={index}
-                isDragging={isDragging}
-                isOverlay={false}
-                isGhost={isGhost}
-              />
-            );
+            try {
+              return (
+                <SortableJobCard
+                  key={`${job.id}-${index}`}
+                  job={job}
+                  index={index}
+                  isDragging={isDragging}
+                  isOverlay={false}
+                  isGhost={isGhost}
+                />
+              );
+            } catch (err) {
+              console.error("❌ Failed to render job card:", job, err);
+              return <div className="text-red-500">Error rendering job</div>;
+            }
           })}
         </SortableContext>
       </div>

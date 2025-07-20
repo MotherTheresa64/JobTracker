@@ -23,7 +23,6 @@ const SortableJobCard = ({
   const { deleteJob, moveJob } = useJobContext();
   const [isEditing, setIsEditing] = useState(false);
 
-  // ✅ HOOKS MUST BE CALLED UNCONDITIONALLY
   const {
     attributes,
     listeners,
@@ -39,20 +38,6 @@ const SortableJobCard = ({
     },
     disabled: isGhost,
   });
-
-  // ✅ You can now check validity AFTER hooks
-  const isValidJob =
-    job &&
-    typeof job === "object" &&
-    typeof job.id === "string" &&
-    typeof job.title === "string" &&
-    typeof job.company === "string" &&
-    typeof job.status === "string";
-
-  if (!isValidJob) {
-    console.warn("⚠️ Invalid job passed to SortableJobCard:", job);
-    return <div ref={setNodeRef} style={{ height: "96px" }} className="w-full" />;
-  }
 
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
