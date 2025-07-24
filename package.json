@@ -1,7 +1,8 @@
 {
-  "name": "jobtracker-pro",
+  "name": "task-forge",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Task Forge - Hammer away your tasks with style",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,14 +15,12 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "classnames": "^2.5.1",
-    "firebase": "^11.10.0",
     "lodash.throttle": "^4.1.1",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.6.3",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
@@ -30,7 +29,6 @@
     "@types/lodash": "^4.17.20",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@types/react-router-dom": "^5.3.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
